@@ -2,48 +2,262 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор финишной смеси</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    label, input { display: block; margin-bottom: 10px; }
-    .result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    :root {
+      --bg-color: #f9f9f9;
+      --container-bg: #fff;
+      --text-color: #333;
+      --button-bg: #4CAF50;
+      --button-hover: #45a049;
+      --result-bg: #f1f8e9;
+      --border-color: #ddd;
+      --error-color: #f44336;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --container-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --button-bg: #388e3c;
+      --button-hover: #2e7d32;
+      --result-bg: #1b5e20;
+      --border-color: #444;
+      --error-color: #ef9a9a;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      background-color: var(--container-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      transition: all 0.3s;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 25px;
+      text-align: center;
+      color: var(--text-color);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+      color: var(--text-color);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: var(--container-bg);
+      color: var(--text-color);
+      transition: border-color 0.3s;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--button-bg);
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    }
+
+    button {
+      width: 100%;
+      background-color: var(--button-bg);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+
+    button:hover {
+      background-color: var(--button-hover);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result {
+      margin-top: 25px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--result-bg);
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 15px 0 0 0;
+    }
+
+    li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .theme-toggle {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .theme-toggle button {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: transparent;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .theme-toggle button:hover {
+      background-color: var(--border-color);
+    }
+
+    .error {
+      color: var(--error-color);
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Калькулятор финишной смеси</h1>
-  <label for="cement">Количество цемента (кг):</label>
-  <input type="number" id="cement" value="5" step="0.1">
-  <button onclick="calculateMix()">Рассчитать</button>
-
-  <div class="result" id="results"></div>
+  <div class="container">
+    <div class="theme-toggle">
+      <button onclick="toggleTheme()" title="Переключить тему">🌓</button>
+    </div>
+    <h1>Калькулятор финишной смеси</h1>
+    
+    <div class="input-group">
+      <label for="cement">Количество цемента (кг):</label>
+      <input type="number" id="cement" value="5" step="0.1" min="0.1" placeholder="Введите количество цемента">
+    </div>
+    
+    <button onclick="calculateMix()">Рассчитать состав</button>
+    
+    <div class="result" id="results">
+      <p>Введите количество цемента для расчета состава смеси.</p>
+    </div>
+  </div>
 
   <script>
+    // Проверяем предпочтения пользователя по теме
+    function checkPreferredTheme() {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const savedTheme = localStorage.getItem('theme');
+      
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } else if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+    
+    // При загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      checkPreferredTheme();
+      // Рассчитываем при загрузке с дефолтными значениями
+      calculateMix();
+    });
+
     function calculateMix() {
-      const cement = parseFloat(document.getElementById('cement').value);
+      const cementInput = document.getElementById('cement');
+      const resultsDiv = document.getElementById('results');
+      const cement = parseFloat(cementInput.value);
+      
+      // Валидация ввода
       if (isNaN(cement) || cement <= 0) {
-        document.getElementById('results').innerHTML = 'Введите корректное количество цемента';
+        resultsDiv.innerHTML = '<p class="error">Пожалуйста, введите корректное количество цемента (больше 0)</p>';
+        cementInput.focus();
+        return;
+      }
+      
+      // Проверка на слишком большое значение (опционально)
+      if (cement > 1000) {
+        resultsDiv.innerHTML = '<p class="error">Слишком большое количество цемента. Введите значение до 1000 кг.</p>';
         return;
       }
 
-      const results = {
-        "Песок": [cement * 1.5, cement * 1.8],
-        "Гашёная известь": [cement * 0.15, cement * 0.20],
-        "Каолин": [cement * 0.10, cement * 0.12],
-        "SikaLatex® (л)": cement * 0.2,
-        "Вода (л)": cement * 1.0,
-        "Суперпластификатор (г, опц.)": [cement * 5, cement * 8]
+      // Расчет компонентов
+      const components = {
+        "Песок (кг)": { min: cement * 1.5, max: cement * 1.8 },
+        "Гашёная известь (кг)": { min: cement * 0.15, max: cement * 0.20 },
+        "Каолин (кг)": { min: cement * 0.10, max: cement * 0.12 },
+        "SikaLatex® (л)": { value: cement * 0.2 },
+        "Вода (л)": { value: cement * 1.0 },
+        "Суперпластификатор (г)": { min: cement * 5, max: cement * 8, optional: true }
       };
 
-      let html = `<strong>На ${cement.toFixed(2)} кг цемента:</strong><ul>`;
-      for (const [key, value] of Object.entries(results)) {
-        if (Array.isArray(value)) {
-          html += `<li>${key}: ${value[0].toFixed(2)} – ${value[1].toFixed(2)}</li>`;
+      // Формируем HTML результат
+      let html = `<strong>Состав смеси на ${cement.toFixed(1)} кг цемента:</strong><ul>`;
+      
+      for (const [name, data] of Object.entries(components)) {
+        if (data.value !== undefined) {
+          html += `<li><strong>${name}</strong>: ${data.value.toFixed(2)}</li>`;
         } else {
-          html += `<li>${key}: ${value.toFixed(2)}</li>`;
+          const optionalText = data.optional ? " (опционально)" : "";
+          html += `<li><strong>${name}${optionalText}</strong>: ${data.min.toFixed(2)} – ${data.max.toFixed(2)}</li>`;
         }
       }
-      html += '</ul>';
-      document.getElementById('results').innerHTML = html;
+      
+      html += '</ul><p><small>Примечание: значения могут незначительно варьироваться в зависимости от конкретных условий.</small></p>';
+      
+      resultsDiv.innerHTML = html;
+      
+      // Сохраняем последнее значение для удобства
+      localStorage.setItem('lastCementValue', cement.toString());
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      const newTheme = isDark ? 'light' : 'dark';
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
     }
   </script>
 </body>
